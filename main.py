@@ -25,7 +25,7 @@ TEMPLATE = """Give 1 interesting fact about the category "{category}" in the fol
 
 import google.generativeai as genai
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel(model_name="gemini-pro")
+model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
 
 @app.get("/models")
 def list_models():
