@@ -28,7 +28,7 @@ if not USE_GEMINI:
 else:
     import google.generativeai as genai
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    model = genai.GenerativeModel("gemini-pro")
+    model = genai.GenerativeModel(model_name="gemini-pro")
 
 @app.get("/fact")
 def get_fact(category: str = Query(...)):
