@@ -30,6 +30,10 @@ else:
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
     model = genai.GenerativeModel(model_name="gemini-pro")
 
+@app.get("/models")
+def list_models():
+    return [m.name for m in genai.list_models()]
+
 @app.get("/fact")
 def get_fact(category: str = Query(...)):
     prompt = TEMPLATE.format(category=category)
