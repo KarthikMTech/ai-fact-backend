@@ -22,13 +22,15 @@ TEMPLATE = """Give 1 interesting fact about the category "{category}" in the fol
   "reference": "url"
 }}"""
 
-if USE_GEMINI:
+
+import google.generativeai as genai
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel(model_name="gemini-pro")
+
+@app.get("/models")
+def list_models():
     import google.generativeai as genai
-    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    model = genai.GenerativeModel(model_name="gemini-pro")
-else:
-    import openai
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    return [m.name for m in genai.list_models()]
 
 @app.get("/fact")
 def get_fact(category: str = Query(...)):
