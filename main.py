@@ -30,6 +30,7 @@ model = genai.GenerativeModel(model_name="gemini-pro")
 @app.get("/models")
 def list_models():
     import google.generativeai as genai
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
     return [m.name for m in genai.list_models()]
 
 @app.get("/fact")
