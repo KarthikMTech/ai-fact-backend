@@ -1,6 +1,8 @@
 import os
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+import json
+
 
 USE_GEMINI = os.getenv("USE_GEMINI", "false").lower() == "true"
 
@@ -41,6 +43,8 @@ def get_fact(category: str = Query(...)):
         if USE_GEMINI:
             response = model.generate_content(prompt)
             content = response.text
+
+            return json.loads(content)
         else:
             response = openai.ChatCompletion.create(
                 model="gpt-4",
@@ -49,6 +53,6 @@ def get_fact(category: str = Query(...)):
             )
             content = response['choices'][0]['message']['content']
 
-        return eval(content)
+        return json.loads(content)
     except Exception as e:
         return {"error": f"Failed to fetch fact: {e}"}
