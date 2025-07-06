@@ -43,7 +43,6 @@ def get_fact(category: str = Query(...)):
         response = model.generate_content(prompt)
         content = response.text
         print("Gemini raw response:\n", content)
-        print("Gemini selected Context:\n", response['choices'][0]['message']['content'])
         return json.loads(content)
     except Exception as e:
         return {"error": f"Failed to fetch fact: {e}"}
