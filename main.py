@@ -40,19 +40,10 @@ def get_fact(category: str = Query(...)):
     prompt = TEMPLATE.format(category=category)
 
     try:
-        if USE_GEMINI:
-            response = model.generate_content(prompt)
-            content = response.text
-
-            return json.loads(content)
-        else:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7
-            )
-            content = response['choices'][0]['message']['content']
-
+        response = model.generate_content(prompt)
+        content = response.text
+        print("Gemini raw response:\n", content)
+        print("Gemini selected Context:\n", response['choices'][0]['message']['content'])
         return json.loads(content)
     except Exception as e:
         return {"error": f"Failed to fetch fact: {e}"}
