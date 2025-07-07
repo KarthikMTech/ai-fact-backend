@@ -4,18 +4,22 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
 
-# Configure Gemini API key
+# Check API key presence
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
-    raise RuntimeError("GEMINI_API_KEY not set in environment")
+    raise RuntimeError("❌ GEMINI_API_KEY is missing. Set it in your environment.")
+
+# Configure Gemini
 genai.configure(api_key=api_key)
 
-# Use a valid Gemini model
-model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
+# Initialize model
+try:
+    model = genai.GenerativeModel("models/gemini-1.5-flash")
+except Exception as e:
+    raise RuntimeError(f"❌ Failed to initialize Gemini model: {e}")
 
 app = FastAPI()
 
-# Allow all CORS for frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,7 +28,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Prompt template
 TEMPLATE = """Respond only with a valid JSON object in this format without any explanation:
 {
   "title": "Fact title",
@@ -35,7 +38,6 @@ TEMPLATE = """Respond only with a valid JSON object in this format without any e
 Give 1 interesting fact about: "{category}"
 """
 
-# Endpoint to test Gemini fact generation
 @app.get("/fact")
 def get_fact(category: str = Query(...)):
     prompt = TEMPLATE.format(category=category)
@@ -49,16 +51,13 @@ def get_fact(category: str = Query(...)):
         return json.loads(content)
 
     except json.JSONDecodeError as e:
-        print("❌ JSON parsing error:", str(e))
         return {
-            "error": f"Failed to parse JSON: {str(e)}",
+            "error": f"❌ Failed to parse JSON: {str(e)}",
             "raw_response": content
         }
-
     except Exception as e:
-        print("❌ General error:", str(e))
         return {
-            "error": f"Failed to fetch fact: {str(e)}"
+            "error": f"❌ Failed to fetch fact: {str(e)}"
         }
 
 # Optional model listing endpoint
