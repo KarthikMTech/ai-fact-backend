@@ -6,6 +6,8 @@ import google.generativeai as genai
 
 # Check API key presence
 api_key = os.getenv("GEMINI_API_KEY")
+
+print ("Gemini API Key Printed:" + api_key);
 if not api_key:
     raise RuntimeError("❌ GEMINI_API_KEY is missing. Set it in your environment.")
 
@@ -14,7 +16,7 @@ genai.configure(api_key=api_key)
 
 # Initialize model
 try:
-    model = genai.GenerativeModel("models/gemini-1.5-flash")
+    model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
 except Exception as e:
     raise RuntimeError(f"❌ Failed to initialize Gemini model: {e}")
 
@@ -31,9 +33,7 @@ app.add_middleware(
 TEMPLATE = """Respond only with a valid JSON object in this format without any explanation:
 {
   "title": "Fact title",
-  "image_url": "https://optional-image.com",
-  "description": "2-4 lines of explanation",
-  "reference": "https://source.com"
+  "description": "2-4 lines of explanation"
 }
 Give 1 interesting fact about: "{category}"
 """
