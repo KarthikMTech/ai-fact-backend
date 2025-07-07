@@ -51,11 +51,14 @@ def get_fact(category: str = Query(...)):
         return json.loads(content)
 
     except json.JSONDecodeError as e:
+        print("❌ JSON Decode Error:", str(e))
         return {
             "error": f"Failed to parse JSON: {str(e)}",
             "raw_response": content
         }
+
     except Exception as e:
+        print("❌ General Exception:", str(e))
         return {
             "error": f"Failed to fetch fact: {str(e)}"
         }
