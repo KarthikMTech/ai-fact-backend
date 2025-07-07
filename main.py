@@ -5,8 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
 
 # Check and set your Gemini API key
-## api_key = os.getenv("GEMINI_API_KEY")
-api_key = "AIzaSyCweGQWlam9J6VvvctV2MqquLAJMewrWqU"
+api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     raise RuntimeError("❌ GEMINI_API_KEY is not set in Render environment.")
 
