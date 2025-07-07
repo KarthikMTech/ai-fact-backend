@@ -16,14 +16,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-TEMPLATE = """Give 1 interesting fact about the category "{category}" in the following JSON format:
-{{
-  "title": "string",
-  "image_url": "optional string",
-  "description": "string, 2-4 lines",
-  "reference": "url"
-}}"""
-
+TEMPLATE = """Respond only with a valid JSON object in this format without any explanation:
+{
+  "title": "Fact title",
+  "image_url": "https://optional-image.com",
+  "description": "2-4 lines of explanation",
+  "reference": "https://source.com"
+}
+Give 1 interesting fact about: "{category}"
+"""
 
 import google.generativeai as genai
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -38,11 +39,13 @@ def list_models():
 @app.get("/fact")
 def get_fact(category: str = Query(...)):
     prompt = TEMPLATE.format(category=category)
-
-    try:
-        response = model.generate_content(prompt)
-        content = response.text
-        print("Gemini raw response:\n", content)
+    
+    response = model.generate_content(prompt)
+    content = response.text.strip()
+    # For debugging:
+    print("🔍 Gemini raw content:", content)
+    
+     try:
         return json.loads(content)
-    except Exception as e:
-        return {"error": f"Failed to fetch fact: {e}"}
+     except json.JSONDecodeError as e:
+        return {"error": f"Failed to parse JSON: {e}", "raw_response": content}
