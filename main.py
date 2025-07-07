@@ -4,13 +4,18 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
 
-# Configure Gemini with your API key
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Configure Gemini API key
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise RuntimeError("GEMINI_API_KEY not set in environment")
+genai.configure(api_key=api_key)
+
+# Use a valid Gemini model
 model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
 
 app = FastAPI()
 
-# Allow frontend CORS requests
+# Allow all CORS for frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,7 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Gemini prompt template
+# Prompt template
 TEMPLATE = """Respond only with a valid JSON object in this format without any explanation:
 {
   "title": "Fact title",
@@ -30,12 +35,7 @@ TEMPLATE = """Respond only with a valid JSON object in this format without any e
 Give 1 interesting fact about: "{category}"
 """
 
-# Optional: Endpoint to list all models
-@app.get("/models")
-def list_models():
-    return [m.name for m in genai.list_models()]
-
-# Main /fact endpoint
+# Endpoint to test Gemini fact generation
 @app.get("/fact")
 def get_fact(category: str = Query(...)):
     prompt = TEMPLATE.format(category=category)
@@ -44,21 +44,24 @@ def get_fact(category: str = Query(...)):
         response = model.generate_content(prompt)
         content = response.text.strip()
 
-        # Debug: Log raw content
         print("🔍 Gemini raw response:\n", content)
 
-        # Parse and return the response
         return json.loads(content)
 
     except json.JSONDecodeError as e:
-        print("❌ JSON Decode Error:", str(e))
+        print("❌ JSON parsing error:", str(e))
         return {
             "error": f"Failed to parse JSON: {str(e)}",
             "raw_response": content
         }
 
     except Exception as e:
-        print("❌ General Exception:", str(e))
+        print("❌ General error:", str(e))
         return {
             "error": f"Failed to fetch fact: {str(e)}"
         }
+
+# Optional model listing endpoint
+@app.get("/models")
+def list_models():
+    return [m.name for m in genai.list_models()]
