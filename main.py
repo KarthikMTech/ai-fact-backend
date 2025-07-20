@@ -1,7 +1,10 @@
-from fastapi import FastAPI, Query
+import os
 import json
-from some_module import model  # Your Gemini model
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+import google.generativeai as genai
+from dotenv import load_dotenv
+#from some_module import model  # Your Gemini model
 from typing import Set
 
 app = FastAPI()
