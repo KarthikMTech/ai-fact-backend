@@ -7,14 +7,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Check and set your Gemini API key
+# Load Gemini API key
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
-    raise RuntimeError("❌ GEMINI_API_KEY is not set in Render environment.")
+    raise RuntimeError("❌ GEMINI_API_KEY is not set.")
 
 genai.configure(api_key=api_key)
 
-# Safely load model
+# Load the Gemini model
 try:
     model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
 except Exception as e:
@@ -22,7 +22,7 @@ except Exception as e:
 
 app = FastAPI()
 
-# CORS for frontend
+# CORS config
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,42 +31,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Prompt template
-TEMPLATE = """Respond only with a valid JSON object in this format without any explanation:
-{
+# FastAPI endpoint to fetch a fact
+@app.get("/fact")
+def get_fact(category: str = Query(...)):
+    # ✅ Dynamically inject category
+    prompt = f"""Respond only with a valid JSON object in this format without any explanation:
+{{
   "title": "Fact title",
-  "image_url": "https://source.com",
+  "image_url": "https://optional-image.com",
   "description": "2-4 lines of explanation",
   "reference": "https://source.com"
-}
+}}
 Give 1 interesting fact about: "{category}"
 """
-
-# Endpoint to return a fact
-@app.get("/fact")
-def get_fact(category: str = Query(...)):    
-    prompt = TEMPLATE.format(category=category)
 
     try:
         response = model.generate_content(prompt)
         content = response.text.strip()
 
-        print("🔍 Gemini raw response:\n", content)
-        
-        # Remove markdown formatting if present
+        # Clean up markdown if present
         if content.startswith("```json"):
-            content = content[7:]  # Remove "```json"
+            content = content[7:]
         if content.startswith("```"):
-            content = content[3:]   # Remove "```"
+            content = content[3:]
         if content.endswith("```"):
-            content = content[:-3]  # Remove closing "```"
-        
+            content = content[:-3]
+
         content = content.strip()
-        print(content)
+        print("🔍 Gemini raw response:\n", content)
+
         return json.loads(content)
+
+    except json.JSONDecodeError as e:
+        return {"error": f"JSON decode failed: {e}", "raw": content}
     except Exception as e:
-        print(f"❌ Error: {e}")
-        return {"error": str(e)}
+        return {"error": f"Internal server error: {e}"}
 
 @app.get("/models")
 def list_models():
