@@ -1,3 +1,4 @@
 fastapi
 uvicorn
-google-generativeai>=0.3.2
+google-generativeai
+dotenv
