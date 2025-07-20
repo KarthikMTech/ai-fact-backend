@@ -32,7 +32,7 @@ app.add_middleware(
 )
 
 # Prompt template
-prompt = """Respond only with a valid JSON object in this format without any explanation:
+TEMPLATE = """Respond only with a valid JSON object in this format without any explanation:
 {
   "title": "Fact title",
   "image_url": "https://source.com",
@@ -44,7 +44,8 @@ Give 1 interesting fact about: "{category}"
 
 # Endpoint to return a fact
 @app.get("/fact")
-def get_fact(category: str = Query(...)):
+def get_fact(category: str = Query(...)):    
+    prompt = TEMPLATE.format(category=category)
 
     try:
         response = model.generate_content(prompt)
