@@ -7,6 +7,21 @@ from dotenv import load_dotenv
 #from some_module import model  # Your Gemini model
 from typing import Set
 
+load_dotenv()
+
+# Check and set your Gemini API key
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise RuntimeError("❌ GEMINI_API_KEY is not set in Render environment.")
+
+genai.configure(api_key=api_key)
+
+# Safely load model
+try:
+    model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
+except Exception as e:
+    raise RuntimeError(f"❌ Model initialization failed: {e}")
+
 app = FastAPI()
 
 # Enable CORS if frontend is on different domain
