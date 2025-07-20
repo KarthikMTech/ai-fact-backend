@@ -4,19 +4,17 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
 from dotenv import load_dotenv
-#from some_module import model  # Your Gemini model
-from typing import Set
 
 load_dotenv()
 
-# Check and set your Gemini API key
+# Load Gemini API key
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
-    raise RuntimeError("❌ GEMINI_API_KEY is not set in Render environment.")
+    raise RuntimeError("❌ GEMINI_API_KEY is not set.")
 
 genai.configure(api_key=api_key)
 
-# Safely load model
+# Load the Gemini model
 try:
     model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
 except Exception as e:
@@ -24,65 +22,50 @@ except Exception as e:
 
 app = FastAPI()
 
-# Enable CORS if frontend is on different domain
+# CORS config
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Store shown facts (in memory)
-shown_facts: Set[str] = set()
-
+# FastAPI endpoint to fetch a fact
 @app.get("/fact")
 def get_fact(category: str = Query(...)):
-    max_retries = 5
-    attempt = 0
-
-    while attempt < max_retries:
-        # Dynamically build the prompt
-        prompt = f"""Respond only with a valid JSON object in this format without any explanation:
+    # ✅ Dynamically inject category
+    prompt = f"""Respond only with a valid JSON object in this format without any explanation:
 {{
   "title": "Fact title",
-  "image_url": "https://source.com",
+  "image_url": "https://optional-image.com",
   "description": "2-4 lines of explanation",
   "reference": "https://source.com"
 }}
 Give 1 interesting fact about: "{category}"
 """
 
-        try:
-            response = model.generate_content(prompt)
-            content = response.text.strip()
+    try:
+        response = model.generate_content(prompt)
+        content = response.text.strip()
 
-            print("🔍 Gemini raw response:\n", content)
+        # Clean up markdown if present
+        if content.startswith("```json"):
+            content = content[7:]
+        if content.startswith("```"):
+            content = content[3:]
+        if content.endswith("```"):
+            content = content[:-3]
 
-            # Clean markdown if present
-            if content.startswith("```json"):
-                content = content[7:]
-            if content.startswith("```"):
-                content = content[3:]
-            if content.endswith("```"):
-                content = content[:-3]
-            
-            content = content.strip()
-            fact = json.loads(content)
+        content = content.strip()
+        print("🔍 Gemini raw response:\n", content)
 
-            # Skip if already shown
-            if fact["title"] in shown_facts:
-                print(f"⚠️ Duplicate fact detected: {fact['title']}")
-                attempt += 1
-                continue
+        return json.loads(content)
 
-            shown_facts.add(fact["title"])
-            return fact
-
-        except Exception as e:
-            print("❌ Error:", e)
-            attempt += 1
-
-    return {"error": "Could not fetch a new unique fact after multiple attempts."}
+    except json.JSONDecodeError as e:
+        return {"error": f"JSON decode failed: {e}", "raw": content}
+    except Exception as e:
+        return {"error": f"Internal server error: {e}"}
 
 @app.get("/models")
 def list_models():
