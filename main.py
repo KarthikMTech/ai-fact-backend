@@ -32,10 +32,10 @@ app.add_middleware(
 )
 
 # Prompt template
-TEMPLATE = """Respond only with a valid JSON object in this format without any explanation:
+prompt = """Respond only with a valid JSON object in this format without any explanation:
 {
   "title": "Fact title",
-  "image_url": "https://optional-image.com",
+  "image_url": "https://source.com",
   "description": "2-4 lines of explanation",
   "reference": "https://source.com"
 }
@@ -45,28 +45,27 @@ Give 1 interesting fact about: "{category}"
 # Endpoint to return a fact
 @app.get("/fact")
 def get_fact(category: str = Query(...)):
-    prompt = TEMPLATE.format(category=category)
 
     try:
         response = model.generate_content(prompt)
         content = response.text.strip()
 
         print("🔍 Gemini raw response:\n", content)
-
+        
+        # Remove markdown formatting if present
+        if content.startswith("```json"):
+            content = content[7:]  # Remove "```json"
+        if content.startswith("```"):
+            content = content[3:]   # Remove "```"
+        if content.endswith("```"):
+            content = content[:-3]  # Remove closing "```"
+        
+        content = content.strip()
+        print(content)
         return json.loads(content)
-
-    except json.JSONDecodeError as e:
-        print("❌ JSON decoding error:", str(e))
-        return {
-            "error": f"Failed to parse JSON: {str(e)}",
-            "raw_response": content
-        }
-
     except Exception as e:
-        print("❌ General backend error:", str(e))
-        return {
-            "error": f"Internal server error: {str(e)}"
-        }
+        print(f"❌ Error: {e}")
+        return {"error": str(e)}
 
 @app.get("/models")
 def list_models():
